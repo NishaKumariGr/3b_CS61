@@ -20,7 +20,6 @@ class command_Line_Interact(cmd.Cmd):
     		db.EDITOR.insert(ed_doc)
     	elif tokens[0] == "REVIEWER":
     		lenOfList=len(tokens)
-    		print(lenOfList)
     		if lenOfList==4:
     			rev_doc = {"FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":None, "RICode3":None,"LastName":tokens[2], "MiddleName":None} 
     			db.REVIEWER.insert(rev_doc)
@@ -30,6 +29,10 @@ class command_Line_Interact(cmd.Cmd):
     		elif lenOfList==6:
     			rev_doc = {"FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":tokens[4], "RICode3":tokens[5],"LastName":tokens[2], "MiddleName":None} 
     			db.REVIEWER.insert(rev_doc)
+
+    	cursor = db.AUTHOR.find({})
+    	for document in cursor: 
+			pprint.pprint(document)
 
     	
 
