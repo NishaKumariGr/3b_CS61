@@ -80,12 +80,45 @@ class command_Line_Interact(cmd.Cmd):
 				pprint.pprint(document)
 
 
-		"""elif line[0]=="R":
+		elif line[0]=="R":
 			self.table="REVIEWER"
-			Select = "SELECT FirstName, LastName FROM REVIEWER WHERE ReviewerID = {0};".format(line[1:])
-			man_report = "SELECT ManuscriptID, Status FROM MANUSCRIPT where ManuscriptID in (SELECT ManuscriptID FROM REVIEW WHERE REVIEWER_idREVIEWER = {0}) ;".format(self.id)
-			self.cursor.execute(man_report)
-			print_table_select(self.cursor)"""
+			#"SELECT FirstName, LastName FROM REVIEWER WHERE ReviewerID = {0};".format(line[1:])
+			#still have to order by status!!!
+			print("Welcome Reviewer "+ line)
+			print("Here are your details:")
+			cursorR = db.REVIEWER.aggregate([
+				{"$match":{
+					"_id":self.id
+				}},
+				{"$project":{
+					"FirstName":1,
+					"LastName":1,
+					"_id":0
+				}}
+			])
+			for document in cursorR: 
+				pprint.pprint(document)
+			
+			print(" ")
+			print("Your current manuscript details: ")
+			cursorR2 = db.MANUSCRIPT.aggregate([
+				{"$lookup":{
+					"from": "REVIEW", 
+					"localField": "_id", 
+					"foreignField": "ManuscriptID", 
+					"as": "reviewMans"
+				}},
+				{"$unwind":"$reviewMans"},
+				{"$match":{
+					"reviewMans.REVIEWER_idREVIEWER":self.id
+				}},
+				{"$project":{
+					"_id":1,
+					"Status":1
+				}}
+			])
+			for document in cursorR2: 
+				pprint.pprint(document)
 
     def do_STATUS (self, line):
     	#Put the thing about WHOZ status to put
