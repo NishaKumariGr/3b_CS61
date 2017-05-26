@@ -10,6 +10,14 @@ SERVER = "mongodb://Team01:7IXQg4KMgmwqeKgS@cluster0-shard-00-00-ppp7l.mongodb.n
 
 class command_Line_Interact(cmd.Cmd):
     """Command processor"""
+    def do_status (self, line):
+		#if self.table == "AUTHOR":
+		#man_report = "SELECT * FROM MANUSCRIPT where ManuscriptID IN 
+		#(SELECT ManuscriptID FROM AUTHORSINMANUSCRIPT WHERE AuthorID = {0} AND AuthorPlace = 1);".format(self.id)
+		cursor = db.MANUSCRIPT.aggregate([{"$lookup":{"from": "AUTHORSINMANUSCRIPT", "localField": "_id", "foreignField": "ManuscriptID", "as": "authorsMans"}}])
+		for document in cursor: 
+			pprint.pprint(document)
+
     def do_register(self, line):
     	tokens = shlex.split(line)
     	if tokens[0] == "AUTHOR":
@@ -33,6 +41,10 @@ class command_Line_Interact(cmd.Cmd):
     	cursor = db.AUTHOR.find({})
     	for document in cursor: 
 			pprint.pprint(document)
+
+	
+
+		
 
     	
 
