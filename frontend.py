@@ -10,9 +10,69 @@ SERVER = "mongodb://Team01:7IXQg4KMgmwqeKgS@cluster0-shard-00-00-ppp7l.mongodb.n
 
 class command_Line_Interact(cmd.Cmd):
     """Command processor"""
-    #Put the thing about WHOZ status to put
-    #Put the things about tokenizing and putting values in $match
-    def do_status (self, line):
+    def do_login (self, line):
+		self.id= line[1:]
+
+		if line[0]=="A":
+			self.table="AUTHOR"
+			print("Welcome Author "+ line)
+			print("Here are your details:")
+			cursorA = db.AUTHOR.aggregate([
+				{"$match":{
+					"_id":self.id
+				}},
+				{"$project":{
+					"FirstName":1,
+					"LastName":1,
+					"MailingAddress":1,
+					"_id":0
+				}}
+			])
+			for document in cursorA: 
+				pprint.pprint(document)
+
+			#man_report = "SELECT ManuscriptID, Status FROM MANUSCRIPT where ManuscriptID IN 
+			#(SELECT ManuscriptID FROM AUTHORSINMANUSCRIPT WHERE AuthorID = {0} AND AuthorPlace = 1);"
+			print(" ")
+			print("Your current manuscript details: ")
+			cursorA2 = db.MANUSCRIPT.aggregate([
+				{"$lookup":{
+					"from": "AUTHORSINMANUSCRIPT", 
+					"localField": "_id", 
+					"foreignField": "ManuscriptID", 
+					"as": "authorsMans"
+				}},
+				{"$unwind":"$authorsMans"},
+				{"$match":{
+					"$and":[
+						{"authorsMans.AuthorID":self.id},
+						{"authorsMans.AuthorPlace":"1"}
+					]
+				}},
+				{"$project":{
+					"_id":1,
+					"Status":1
+				}}
+			])
+		for document in cursorA2: 
+			pprint.pprint(document)
+
+		"""elif line[0]=="E":
+			self.table="EDITOR"
+			Select = "SELECT FirstName, LastName FROM EDITOR WHERE EditorID = {0};".format(line[1:])
+			man_report = "SELECT * FROM MANUSCRIPT  where EDITOR_idEDITOR = {0} ORDER BY status, ManuscriptID;".format(self.id)
+			self.cursor.execute(man_report)
+			print_table_select(self.cursor)
+		elif line[0]=="R":
+			self.table="REVIEWER"
+			Select = "SELECT FirstName, LastName FROM REVIEWER WHERE ReviewerID = {0};".format(line[1:])
+			man_report = "SELECT ManuscriptID, Status FROM MANUSCRIPT where ManuscriptID in (SELECT ManuscriptID FROM REVIEW WHERE REVIEWER_idREVIEWER = {0}) ;".format(self.id)
+			self.cursor.execute(man_report)
+			print_table_select(self.cursor)"""
+
+    def do_STATUS (self, line):
+    	#Put the thing about WHOZ status to put
+    	#Put the things about tokenizing and putting values in $match
 		#if self.table == "AUTHOR":		
 		cursor = db.MANUSCRIPT.aggregate([
 			{"$lookup":{
