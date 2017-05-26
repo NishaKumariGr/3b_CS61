@@ -31,8 +31,6 @@ class command_Line_Interact(cmd.Cmd):
 			for document in cursorA: 
 				pprint.pprint(document)
 
-			#man_report = "SELECT ManuscriptID, Status FROM MANUSCRIPT where ManuscriptID IN 
-			#(SELECT ManuscriptID FROM AUTHORSINMANUSCRIPT WHERE AuthorID = {0} AND AuthorPlace = 1);"
 			print(" ")
 			print("Your current manuscript details: ")
 			cursorA2 = db.MANUSCRIPT.aggregate([
@@ -54,16 +52,35 @@ class command_Line_Interact(cmd.Cmd):
 					"Status":1
 				}}
 			])
-		for document in cursorA2: 
-			pprint.pprint(document)
+			for document in cursorA2: 
+				pprint.pprint(document)
 
-		"""elif line[0]=="E":
+		elif line[0]=="E":
 			self.table="EDITOR"
-			Select = "SELECT FirstName, LastName FROM EDITOR WHERE EditorID = {0};".format(line[1:])
-			man_report = "SELECT * FROM MANUSCRIPT  where EDITOR_idEDITOR = {0} ORDER BY status, ManuscriptID;".format(self.id)
-			self.cursor.execute(man_report)
-			print_table_select(self.cursor)
-		elif line[0]=="R":
+			#still have to order by status!!!
+			print("Welcome Editor "+ line)
+			print("Here are your details:")
+			cursorE = db.EDITOR.aggregate([
+				{"$match":{
+					"_id":self.id
+				}},
+				{"$project":{
+					"FirstName":1,
+					"LastName":1,
+					"_id":0
+				}}
+			])
+			for document in cursorE: 
+				pprint.pprint(document)
+
+			print(" ")
+			print("Your current manuscript details: ")
+			cursorE2 = db.MANUSCRIPT.aggregate([{"$match":{"EDITOR_idEDITOR" : self.id}}, {"$sort": {"_id":1}}])
+			for document in cursorE2: 
+				pprint.pprint(document)
+
+
+		"""elif line[0]=="R":
 			self.table="REVIEWER"
 			Select = "SELECT FirstName, LastName FROM REVIEWER WHERE ReviewerID = {0};".format(line[1:])
 			man_report = "SELECT ManuscriptID, Status FROM MANUSCRIPT where ManuscriptID in (SELECT ManuscriptID FROM REVIEW WHERE REVIEWER_idREVIEWER = {0}) ;".format(self.id)
