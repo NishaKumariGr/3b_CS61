@@ -4,18 +4,61 @@ import sys                                   # for misc errors
 import cmd                                   # for creating line-oriented command processors
 import shlex
 
-#7IXQg4KMgmwqeKgS
+#	
  # db server to connect to
 SERVER = "mongodb://Team01:7IXQg4KMgmwqeKgS@cluster0-shard-00-00-ppp7l.mongodb.net:27017,cluster0-shard-00-01-ppp7l.mongodb.net:27017,cluster0-shard-00-02-ppp7l.mongodb.net:27017"               
 
 class command_Line_Interact(cmd.Cmd):
     """Command processor"""
+    #Put the thing about WHOZ status to put
+    #Put the things about tokenizing and putting values in $match
     def do_status (self, line):
-		#if self.table == "AUTHOR":
-		#man_report = "SELECT * FROM MANUSCRIPT where ManuscriptID IN 
-		#(SELECT ManuscriptID FROM AUTHORSINMANUSCRIPT WHERE AuthorID = {0} AND AuthorPlace = 1);".format(self.id)
-		cursor = db.MANUSCRIPT.aggregate([{"$lookup":{"from": "AUTHORSINMANUSCRIPT", "localField": "_id", "foreignField": "ManuscriptID", "as": "authorsMans"}}])
+		#if self.table == "AUTHOR":		
+		cursor = db.MANUSCRIPT.aggregate([
+			{"$lookup":{
+				"from": "AUTHORSINMANUSCRIPT", 
+				"localField": "_id", 
+				"foreignField": "ManuscriptID", 
+				"as": "authorsMans"
+			}},
+			{"$unwind":"$authorsMans"},
+			{"$match":{
+				"$and":[
+					{"authorsMans.AuthorID":"2"},
+					{"authorsMans.AuthorPlace":"1"}
+				]
+			}},
+			{"$project":{
+				"authorsMans":0
+			}}
+		])
 		for document in cursor: 
+			pprint.pprint(document)
+
+		#if self.table == "EDITOR":	
+		#order by status!!
+		cursor1 = db.MANUSCRIPT.aggregate([{"$match":{"EDITOR_idEDITOR" : "1"}}, {"$sort": {"_id":1}}])
+		for document in cursor1: 
+			pprint.pprint(document)
+
+		#if self.table == "REVIEWER":
+		cursor2 = db.MANUSCRIPT.aggregate([
+			{"$lookup":{
+				"from": "REVIEW", 
+				"localField": "_id", 
+				"foreignField": "ManuscriptID", 
+				"as": "reviewMans"
+			}},
+			{"$unwind":"$reviewMans"},
+			{"$match":{
+				"reviewMans.REVIEWER_idREVIEWER":"3"
+			}},
+			{"$project":{
+				"_id":1,
+				"Status":1
+			}}
+		])
+		for document in cursor2: 
 			pprint.pprint(document)
 
     def do_register(self, line):
