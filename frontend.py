@@ -14,6 +14,8 @@ class command_Line_Interact(cmd.Cmd):
     def do_exit(self, line):
     	return True
 
+    def do_submit(self,line):
+    	
     def do_assign(self, line):
 		tokens = shlex.split(line)
 		manu_id = tokens[0]
