@@ -15,6 +15,36 @@ class command_Line_Interact(cmd.Cmd):
     	return True
 
     def do_submit(self,line):
+    	tokens = shlex.split(line)
+        title = tokens[0]
+        Affiliation = tokens[1]
+        RICode = tokens[2]
+        sec_authors = tokens[3:-1] 
+        filename = tokens[-1]
+        latest_man = db.MANUSCRIPT.find()
+        for doc in latest_man:
+        	latest_id = doc['_id']
+        newid = int(latest_id)+1
+        #Submit the manuscript
+        sub_man = {"_id":str(newid), "RICode":RICode, "EDITOR_idEDITOR":"1", "Title":title, "Status":"Received", "FileBlob":filename, "Pages":None, "Acceptant_RejectionDate":None, "IssueYear":None, "IssueVolume":None}
+        db.MANUSCRIPT.insert(sub_man)
+    	msg = "Manuscript has been submitted in the system! The ID of the new Manuscript is: {0}".format(newid)
+        print(msg)
+
+        #Update the affiliation of the author
+        db.AUTHOR.update(
+        	{"_id":self.id},
+        	{"$set":{"Affiliation": Affiliation}},
+        upsert=True)
+
+        #Update all the the authors in AUTHORSINMANUSCRIPT table for credits' record
+        a_rank = 2
+        man_auth_first = {"ManuscriptID":str(newid), "AuthorID":self.id, "AuthorPlace": "1"}
+        db.AUTHORSINMANUSCRIPT.insert(man_auth_first)
+        for auth in sec_authors:
+        	man_auth_other = {"ManuscriptID":str(newid), "AuthorID":auth, "AuthorPlace": str(a_rank)}
+        	db.AUTHORSINMANUSCRIPT.insert(man_auth_other)
+        	a_rank += 1
     	
     def do_assign(self, line):
 		tokens = shlex.split(line)
