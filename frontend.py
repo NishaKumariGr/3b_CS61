@@ -239,6 +239,44 @@ class command_Line_Interact(cmd.Cmd):
     	db.REVIEWER.remove({ "_id" : line[1:]})
     	print ("Thank you for your service")
 
+    def do_REVIEWREJECT(self,line):
+    	tokens = shlex.split(line)
+
+    	status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
+    	for doc in status:
+    		latest_status = doc['Status']
+
+    	print (latest_status)
+    	if latest_status=="Under review":
+	    	db.REVIEW.update( 
+					{"ManuscriptID": tokens[0], "REVIEWER_idREVIEWER" : self.id},
+					{ "$set":{"PublicationRecommendation": "Reject", "Clarity": tokens[1], "Methodology": tokens[2], "Contribution": tokens[3], "Appropriateness": tokens[4]} },
+					upsert=True )
+	    	print ("Updated publication recommendation  to rejected")
+	else:
+	 	print ("Cannot review this manuscript, not assigned for reviewing!")
+
+
+    def do_REVIEWACCEPT(self,line):
+    	tokens = shlex.split(line)
+
+    	status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
+    	for doc in status:
+    		latest_status = doc['Status']
+
+    	print (latest_status)
+    	if latest_status=="Under review":
+	    	db.REVIEW.update( 
+					{"ManuscriptID": tokens[0], "REVIEWER_idREVIEWER" : self.id},
+					{ "$set":{"PublicationRecommendation": "Accept", "Clarity": tokens[1], "Methodology": tokens[2], "Contribution": tokens[3], "Appropriateness": tokens[4]} },
+					upsert=True )
+	    	print ("Updated publication recommendation to Accepted")
+	else:
+	 	print ("Cannot review this manuscript, not assigned for reviewing!")
+
+
+
+
 
 def print_options(table):
 	print("\n*****************************")
