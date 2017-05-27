@@ -10,20 +10,14 @@ import shlex
 SERVER = "mongodb://Team01:7IXQg4KMgmwqeKgS@cluster0-shard-00-00-ppp7l.mongodb.net:27017,cluster0-shard-00-01-ppp7l.mongodb.net:27017,cluster0-shard-00-02-ppp7l.mongodb.net:27017"               
 
 class command_Line_Interact(cmd.Cmd):
-    """Command processor"""
-   
-	def do_submit(self, line):
-		 
-
+    """Command processor""" 
     def do_exit(self, line):
-        return True
+    	return True
 
     def do_assign(self, line):
 		tokens = shlex.split(line)
 		manu_id = tokens[0]
 		rev_id = tokens[1]
-      	#check if editor can handle this manuscript
-      
 		cursorE = db.MANUSCRIPT.aggregate([
 			{"$match":{
 				"_id":manu_id
@@ -33,9 +27,7 @@ class command_Line_Interact(cmd.Cmd):
 				"_id":0
 			}}
 		])
-		
 		for document in cursorE: 
-			
 			if document['EDITOR_idEDITOR'] == self.id:
 				print("This Editor has the authorization to assign this manuscipt!")
 				rev_assign = {"REVIEWER_idREVIEWER":rev_id,"EDITOR_idEDITOR":self.id, "ManuscriptID":manu_id, "Clarity":None, "Methodology":None, "Contribution":None,"PublicationRecommendation":None, "Appropriateness":None} 
@@ -208,28 +200,39 @@ class command_Line_Interact(cmd.Cmd):
     def do_register(self, line):
     	tokens = shlex.split(line)
     	if tokens[0] == "AUTHOR":
-    		auth_doc = {"FirstName":tokens[1],"LastName":tokens[2], "MiddleName":None, "EmailAddress":tokens[3], "MailingAddress":tokens[4], "Affiliation":None}
+    		latest_auth = db.AUTHOR.find()
+    		for doc in latest_auth:
+    			latest_id = doc['_id']
+
+    		newid = int(latest_id)+1
+    		auth_doc = {"_id": str(newid), "FirstName":tokens[1],"LastName":tokens[2], "MiddleName":None, "EmailAddress":tokens[3], "MailingAddress":tokens[4], "Affiliation":None}
     		db.AUTHOR.insert(auth_doc)
+
     	elif tokens[0] == "EDITOR":
-    		ed_doc = {"FirstName":tokens[1],"LastName":tokens[2], "MiddleName":None}
+    		latest_ed = db.EDITOR.find()
+    		for doc in latest_ed:
+    			latest_id = doc['_id']
+
+    		newid = int(latest_id)+1
+    		ed_doc = {"_id": str(newid), "FirstName":tokens[1],"LastName":tokens[2], "MiddleName":None}
     		db.EDITOR.insert(ed_doc)
     	elif tokens[0] == "REVIEWER":
     		lenOfList=len(tokens)
+    		latest_rev = db.REVIEWER.find()
+    		for doc in latest_rev:
+    			latest_id = doc['_id']
+
+    		newid = int(latest_id)+1
     		if lenOfList==4:
-    			rev_doc = {"FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":None, "RICode3":None,"LastName":tokens[2], "MiddleName":None} 
+    			rev_doc = {"_id": str(newid), "FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":None, "RICode3":None,"LastName":tokens[2], "MiddleName":None} 
     			db.REVIEWER.insert(rev_doc)
     		elif lenOfList==5:
-    			rev_doc = {"FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":tokens[4], "RICode3":None,"LastName":tokens[2], "MiddleName":None} 
+    			rev_doc = {"_id": str(newid), "FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":tokens[4], "RICode3":None,"LastName":tokens[2], "MiddleName":None} 
     			db.REVIEWER.insert(rev_doc)
     		elif lenOfList==6:
-    			rev_doc = {"FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":tokens[4], "RICode3":tokens[5],"LastName":tokens[2], "MiddleName":None} 
+    			rev_doc = {"_id": str(newid), "FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":tokens[4], "RICode3":tokens[5],"LastName":tokens[2], "MiddleName":None} 
     			db.REVIEWER.insert(rev_doc)
 
-    	cursor = db.AUTHOR.find({})
-    	for document in cursor: 
-			pprint.pprint(document)
-
-	
 def print_options(table):
 	print("\n*****************************")
 	print ("What do you wish to to today?")
@@ -241,10 +244,6 @@ def print_options(table):
 		print ("\n 1. status\n 2. assign\n 3. reject\n 4. accept\n 5. typeset\n 6. schedule\n 7. publish")
 	elif table=="REVIEWER":
 		print ("\n 1. REVIEWREJECT\n 2. REVIEWACCEPT")
-	
-
-    	
-
 
 #main function where the connection happens
 if __name__ == "__main__":
