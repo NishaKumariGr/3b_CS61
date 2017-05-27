@@ -235,6 +235,13 @@ class command_Line_Interact(cmd.Cmd):
     			rev_doc = {"_id": str(newid), "FirstName":tokens[1],"EmailId":None, "Affiliation":None, "RICode1":tokens[3], "RICode2":tokens[4], "RICode3":tokens[5],"LastName":tokens[2], "MiddleName":None} 
     			db.REVIEWER.insert(rev_doc)
 
+    def do_resign(self,line):
+    	print ("Welcome "+line)
+    	db.REVIEW.remove({ "REVIEWER_idREVIEWER" : line[1:]})
+    	db.REVIEWER.remove({ "_id" : line[1:]})
+    	print ("Thank you for your service")
+
+
 def print_options(table):
 	print("\n*****************************")
 	print ("What do you wish to to today?")
