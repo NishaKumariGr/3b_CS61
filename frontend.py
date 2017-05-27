@@ -14,6 +14,16 @@ class command_Line_Interact(cmd.Cmd):
     def do_exit(self, line):
     	return True
 
+    def do_RETRACT(self,line):
+    	response = raw_input ("Are you sure? (yes/no) \n")
+    	print (line)
+    	if response=="yes":
+    		db.ManuscriptsInIssue.remove({"ManuscriptID":line})
+    		db.AUTHORSINMANUSCRIPT.remove({"ManuscriptID":line})
+    		db.REVIEW.remove({"ManuscriptID":line})
+    		db.MANUSCRIPT.remove({ "_id" : line})
+    		print("Manuscript "+ line +" is deleted from the system!")
+
     def do_submit(self,line):
     	tokens = shlex.split(line)
         title = tokens[0]
