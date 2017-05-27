@@ -4,13 +4,50 @@ import sys                                   # for misc errors
 import cmd                                   # for creating line-oriented command processors
 import shlex
 
-#	
- # db server to connect to
+#./mongo "mongodb://cluster0-shard-00-00-ppp7l.mongodb.net:27017,cluster0-shard-00-01-ppp7l.mongodb.net:27017,cluster0-shard-00-02-ppp7l.mongodb.net:27017/Team01DB?replicaSet=Cluster0-shard-0" --authenticationDatabase admin --ssl --username Team01 --password
+#7IXQg4KMgmwqeKgS 
+# db server to connect to
 SERVER = "mongodb://Team01:7IXQg4KMgmwqeKgS@cluster0-shard-00-00-ppp7l.mongodb.net:27017,cluster0-shard-00-01-ppp7l.mongodb.net:27017,cluster0-shard-00-02-ppp7l.mongodb.net:27017"               
 
 class command_Line_Interact(cmd.Cmd):
     """Command processor"""
+   
+	def do_submit(self, line):
+		 
+
+    def do_exit(self, line):
+        return True
+
+    def do_assign(self, line):
+		tokens = shlex.split(line)
+		manu_id = tokens[0]
+		rev_id = tokens[1]
+      	#check if editor can handle this manuscript
+      
+		cursorE = db.MANUSCRIPT.aggregate([
+			{"$match":{
+				"_id":manu_id
+			}},
+			{"$project":{
+				"EDITOR_idEDITOR":1,
+				"_id":0
+			}}
+		])
+		
+		for document in cursorE: 
+			
+			if document['EDITOR_idEDITOR'] == self.id:
+				print("This Editor has the authorization to assign this manuscipt!")
+				rev_assign = {"REVIEWER_idREVIEWER":rev_id,"EDITOR_idEDITOR":self.id, "ManuscriptID":manu_id, "Clarity":None, "Methodology":None, "Contribution":None,"PublicationRecommendation":None, "Appropriateness":None} 
+				db.REVIEW.insert(rev_assign)
+				#print(rev_assign)
+				print("Reviewer Successfully Assigned!") 
+				break
+			else:
+				print("This Editor DOES NOT have the authorization to assign this manuscipt! Try again.") 
+
     def do_login (self, line):
+    	#still have to order by status!!!
 		self.id= line[1:]
 
 		if line[0]=="A":
@@ -57,7 +94,6 @@ class command_Line_Interact(cmd.Cmd):
 
 		elif line[0]=="E":
 			self.table="EDITOR"
-			#still have to order by status!!!
 			print("Welcome Editor "+ line)
 			print("Here are your details:")
 			cursorE = db.EDITOR.aggregate([
@@ -82,8 +118,6 @@ class command_Line_Interact(cmd.Cmd):
 
 		elif line[0]=="R":
 			self.table="REVIEWER"
-			#"SELECT FirstName, LastName FROM REVIEWER WHERE ReviewerID = {0};".format(line[1:])
-			#still have to order by status!!!
 			print("Welcome Reviewer "+ line)
 			print("Here are your details:")
 			cursorR = db.REVIEWER.aggregate([
@@ -119,57 +153,57 @@ class command_Line_Interact(cmd.Cmd):
 			])
 			for document in cursorR2: 
 				pprint.pprint(document)
+		print_options(self.table)
 
     def do_STATUS (self, line):
-    	#Put the thing about WHOZ status to put
-    	#Put the things about tokenizing and putting values in $match
-		#if self.table == "AUTHOR":		
-		cursor = db.MANUSCRIPT.aggregate([
-			{"$lookup":{
-				"from": "AUTHORSINMANUSCRIPT", 
-				"localField": "_id", 
-				"foreignField": "ManuscriptID", 
-				"as": "authorsMans"
-			}},
-			{"$unwind":"$authorsMans"},
-			{"$match":{
-				"$and":[
-					{"authorsMans.AuthorID":"2"},
-					{"authorsMans.AuthorPlace":"1"}
-				]
-			}},
-			{"$project":{
-				"authorsMans":0
-			}}
-		])
-		for document in cursor: 
-			pprint.pprint(document)
+    	#have to sort by status in editor
+		if self.table == "AUTHOR":		
+			cursor = db.MANUSCRIPT.aggregate([
+				{"$lookup":{
+					"from": "AUTHORSINMANUSCRIPT", 
+					"localField": "_id", 
+					"foreignField": "ManuscriptID", 
+					"as": "authorsMans"
+				}},
+				{"$unwind":"$authorsMans"},
+				{"$match":{
+					"$and":[
+						{"authorsMans.AuthorID":self.id},
+						{"authorsMans.AuthorPlace":"1"}
+					]
+				}},
+				{"$project":{
+					"authorsMans":0
+				}}
+			])
+			for document in cursor: 
+				pprint.pprint(document)
 
-		#if self.table == "EDITOR":	
+		elif self.table == "EDITOR":	
 		#order by status!!
-		cursor1 = db.MANUSCRIPT.aggregate([{"$match":{"EDITOR_idEDITOR" : "1"}}, {"$sort": {"_id":1}}])
-		for document in cursor1: 
-			pprint.pprint(document)
+			cursor1 = db.MANUSCRIPT.aggregate([{"$match":{"EDITOR_idEDITOR" : self.id}}, {"$sort": {"_id":1}}])
+			for document in cursor1: 
+				pprint.pprint(document)
 
-		#if self.table == "REVIEWER":
-		cursor2 = db.MANUSCRIPT.aggregate([
-			{"$lookup":{
-				"from": "REVIEW", 
-				"localField": "_id", 
-				"foreignField": "ManuscriptID", 
-				"as": "reviewMans"
-			}},
-			{"$unwind":"$reviewMans"},
-			{"$match":{
-				"reviewMans.REVIEWER_idREVIEWER":"3"
-			}},
-			{"$project":{
-				"_id":1,
-				"Status":1
-			}}
-		])
-		for document in cursor2: 
-			pprint.pprint(document)
+		elif self.table == "REVIEWER":
+			cursor2 = db.MANUSCRIPT.aggregate([
+				{"$lookup":{
+					"from": "REVIEW", 
+					"localField": "_id", 
+					"foreignField": "ManuscriptID", 
+					"as": "reviewMans"
+				}},
+				{"$unwind":"$reviewMans"},
+				{"$match":{
+					"reviewMans.REVIEWER_idREVIEWER":self.id
+				}},
+				{"$project":{
+					"_id":1,
+					"Status":1
+				}}
+			])
+			for document in cursor2: 
+				pprint.pprint(document)
 
     def do_register(self, line):
     	tokens = shlex.split(line)
@@ -196,8 +230,18 @@ class command_Line_Interact(cmd.Cmd):
 			pprint.pprint(document)
 
 	
+def print_options(table):
+	print("\n*****************************")
+	print ("What do you wish to to today?")
+	print("\n*****************************")
 
-		
+	if table=="AUTHOR":
+		print ("\n 1. submit\n 2. STATUS\n 3. RETRACT")
+	elif table=="EDITOR":
+		print ("\n 1. status\n 2. assign\n 3. reject\n 4. accept\n 5. typeset\n 6. schedule\n 7. publish")
+	elif table=="REVIEWER":
+		print ("\n 1. REVIEWREJECT\n 2. REVIEWACCEPT")
+	
 
     	
 
