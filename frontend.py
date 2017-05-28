@@ -98,8 +98,8 @@ class command_Line_Interact(cmd.Cmd):
 									{"$unwind":"$authorsMans"},
 									{"$match":{
 										"$and":[
-											{"authorsMans.Year":pub_year},
-											{"authorsMans.Volume":pub_vol}
+											{"IssueYear":pub_year},
+											{"IssueVolume":pub_vol}
 										]
 									}},
 									{"$project":{
@@ -109,10 +109,12 @@ class command_Line_Interact(cmd.Cmd):
 								])
 								p_sum = 0
 								count = 0
+								oldp_sum = 0
 								for doc in cursorPM:
 									p = doc['Pages']
 									p_sum = p_sum + int(p)
 									count = count+1
+									print(doc)
 								oldp_sum = p_sum
 								cursorSP = db.MANUSCRIPT.aggregate([
 									{"$match":{
@@ -124,8 +126,12 @@ class command_Line_Interact(cmd.Cmd):
 									}}
 								])
 								for doc in cursorSP:
-									p = int(doc['Pages'])
-								p_sum = p_sum + p
+									pp = int(doc['Pages'])
+								p_sum = p_sum + pp
+								print("My pages:" + str(pp))
+								print("Previous sum:" + str(oldp_sum))
+								print("New sum: " + str(p_sum))
+								print("Prev count: " + str(count))
 								if(p_sum <= 100):
 									print("Pages do not exceed limit hence can proceed!")
 									# Update status of the manuscript to "Scheduled"
