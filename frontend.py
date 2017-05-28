@@ -14,6 +14,114 @@ class command_Line_Interact(cmd.Cmd):
     def do_exit(self, line):
     	return True
 
+    def do_schedule(self, line):
+    	tokens = shlex.split(line)
+        manu_id = tokens[0]
+        pub_year = tokens[1]
+        pub_vol = tokens[2]
+        #check is editor can manage this manuscript
+        cursorE = db.MANUSCRIPT.aggregate([
+			{"$match":{
+				"_id":manu_id
+			}},
+			{"$project":{
+				"EDITOR_idEDITOR":1,
+				"_id":0
+			}}
+			])
+        for document in cursorE: 
+			if document['EDITOR_idEDITOR'] == self.id:
+				print("This Editor has the authorization to schedule this manuscipt!")
+				# check if manuscript has the appropriate status
+				cursorM = db.MANUSCRIPT.aggregate([
+					{"$match":{
+						"_id":manu_id
+					}},
+					{"$project":{
+						"Status": 1,
+						"_id":0
+					}}
+				])
+				for doc in cursorM:
+					m_stat = doc['Status']
+					if m_stat == "Typeset":
+						print("This manuscript has the appropriate current status to be scheduled!")
+						#make sure the desired issue is not already published
+						cursorI = db.ISSUE.aggregate([
+							{"$match":{
+								"PublicationYear":pub_year,
+								"PublicationVolume":pub_vol
+							}},
+							{"$project":{
+								"Status":1,
+								"_id":0
+							}}
+						])
+						for doc in cursorI:
+							i_stat = doc['Status']
+							if i_stat == "scheduled":
+								print("The issue is not yet published, hence can proceed!")
+								#make sure the total number of pages do not exceed page limit of issue
+								cursorPM = db.MANUSCRIPT.aggregate([
+									{"$lookup":{
+										"from": "ManuscriptsInIssue", 
+										"localField": "_id", 
+										"foreignField": "ManuscriptID", 
+										"as": "authorsMans"
+									}},
+									{"$unwind":"$authorsMans"},
+									{"$match":{
+										"$and":[
+											{"authorsMans.Year":pub_year},
+											{"authorsMans.Volume":pub_vol}
+										]
+									}},
+									{"$project":{
+										"_id":1,
+										"Pages":1
+									}}
+								])
+								p_sum = 0
+								count = 0
+								for doc in cursorPM:
+									p = doc['Pages']
+									p_sum = p_sum + int(p)
+									count = count+1
+								oldp_sum = p_sum
+								cursorSP = db.MANUSCRIPT.aggregate([
+									{"$match":{
+										"_id":manu_id
+									}},
+									{"$project":{
+										"Pages":1,
+										"_id":0
+									}}
+								])
+								for doc in cursorSP:
+									p = int(doc['Pages'])
+								p_sum = p_sum + p
+								if(p_sum <= 100):
+									print("Pages do not exceed limit hence can proceed!")
+									# Update status of the manuscript to "Scheduled"
+									db.MANUSCRIPT.update( 
+										{"_id": manu_id},
+										{ "$set":{"Status": "Scheduled", "IssueYear":pub_year, "IssueVolume":pub_vol}},
+									upsert=True)
+									# Add the manuscript into the issue
+									man_issue = {"ManuscriptID":manu_id, "OrderNo":str(count+1), "BeginPage":str(oldp_sum+1), "Year":pub_year, "Vol":pub_vol}
+        							db.ManuscriptsInIssue.insert(man_issue)
+        							print("Manuscript successfully scheduled in issue!")
+        						else:
+        							print("Manuscript Cannot be schedule, issue pages exceed limit!")
+        					else:
+								print("This issue is already published and cannot take any more manuscripts!")
+					else:
+						print("Manuscript DOES NOT have the appropriate current status for this action!")
+			else:
+				print("This Editor DOES NOT have the authorization to schedule this manuscipt! Try again.")
+
+
+
     def do_typeset(self, line):
 		tokens = shlex.split(line)
 		manu_id = tokens[0]
@@ -30,7 +138,7 @@ class command_Line_Interact(cmd.Cmd):
 		])
 		for document in cursorE: 
 			if document['EDITOR_idEDITOR'] == self.id:
-				print("This Editor has the authorization to assign this manuscipt!")
+				print("This Editor has the authorization to typeset this manuscipt!")
 				# check if manuscript has the appropriate status
 				cursorM = db.MANUSCRIPT.aggregate([
 					{"$match":{
@@ -55,7 +163,7 @@ class command_Line_Interact(cmd.Cmd):
 						print("Manuscript DOES NOT have the appropriate current status for this action!")
 
 			else:
-				print("This Editor DOES NOT have the authorization to assign this manuscipt! Try again.") 
+				print("This Editor DOES NOT have the authorization to typeset this manuscipt! Try again.") 
 
     def do_RETRACT(self,line):
     	response = raw_input ("Are you sure? (yes/no) \n")
