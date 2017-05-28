@@ -14,6 +14,49 @@ class command_Line_Interact(cmd.Cmd):
     def do_exit(self, line):
     	return True
 
+    def do_typeset(self, line):
+		tokens = shlex.split(line)
+		manu_id = tokens[0]
+		pages = tokens[1]
+		#check if editor can manage this manuscript
+		cursorE = db.MANUSCRIPT.aggregate([
+			{"$match":{
+				"_id":manu_id
+			}},
+			{"$project":{
+				"EDITOR_idEDITOR":1,
+				"_id":0
+			}}
+		])
+		for document in cursorE: 
+			if document['EDITOR_idEDITOR'] == self.id:
+				print("This Editor has the authorization to assign this manuscipt!")
+				# check if manuscript has the appropriate status
+				cursorM = db.MANUSCRIPT.aggregate([
+					{"$match":{
+						"_id":manu_id
+					}},
+					{"$project":{
+						"Status": 1,
+						"_id":0
+					}}
+				])
+				for doc in cursorM:
+					m_stat = doc['Status']
+					if m_stat == "Accepted":
+						print("This manuscript has the appropriate current status to be typeset!")
+						#update status and pages
+						db.MANUSCRIPT.update( 
+							{"_id": manu_id, "EDITOR_idEDITOR" : self.id},
+							{ "$set":{"Status": "Typeset", "Pages": pages}},
+						upsert=True )
+						print("Manuscript "+ manu_id+ "'s number of pages set to "+ pages+ ".")
+					else:
+						print("Manuscript DOES NOT have the appropriate current status for this action!")
+
+			else:
+				print("This Editor DOES NOT have the authorization to assign this manuscipt! Try again.") 
+
     def do_RETRACT(self,line):
     	response = raw_input ("Are you sure? (yes/no) \n")
     	print (line)
