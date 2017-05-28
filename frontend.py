@@ -14,6 +14,32 @@ class command_Line_Interact(cmd.Cmd):
     def do_exit(self, line):
     	return True
 
+    def do_publish(self, line):
+    	tokens = shlex.split(line)
+        pub_year = tokens[0]
+        pub_vol = tokens[1]
+        count = 0
+        ids = []
+        cursorE = db.ManuscriptsInIssue.aggregate([{"$match":{"Year":pub_year,"Volume": pub_vol}},{"$project":{"ManuscriptID":1,"_id":0}}])
+        for doc in cursorE:
+        	ids.append(int(doc['ManuscriptID']))
+        	count = count+1
+        print (ids)
+        if count >= 1:
+        	print("Issue has atleast one manuscript, hence can be published!")
+        	db.ISSUE.update(
+        			{"PublicationYear": pub_year, "PublicationVolume": pub_vol},
+					{ "$set":{"Status": "Published"}},
+				upsert=True)
+        	for id in ids:
+        		db.MANUSCRIPT.update(
+        			{"_id": str(id)},
+					{ "$set":{"Status": "Published"}},
+				upsert=True)
+        	print("Issue Successfully Published!")
+        else:
+			print("Issue is empty, hence cannot be published!")
+
     def do_schedule(self, line):
     	tokens = shlex.split(line)
         manu_id = tokens[0]
