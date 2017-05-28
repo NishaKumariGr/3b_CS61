@@ -284,37 +284,110 @@ class command_Line_Interact(cmd.Cmd):
     def do_REVIEWREJECT(self,line):
     	tokens = shlex.split(line)
 
-    	status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
-    	for doc in status:
-    		latest_status = doc['Status']
+    	#check if the reviewer can review this manuscript 
+    	ids = db.REVIEW.find({"REVIEWER_idREVIEWER":self.id},{"ManuscriptID":1, "_id":0})
+    	flag = 0
+    	for doc in ids:
+    		latest_id = doc['ManuscriptID']
+    		if latest_id==tokens[0]:
+    			flag=1
 
-    	print (latest_status)
-    	if latest_status=="Under review":
-	    	db.REVIEW.update( 
-					{"ManuscriptID": tokens[0], "REVIEWER_idREVIEWER" : self.id},
-					{ "$set":{"PublicationRecommendation": "Reject", "Clarity": tokens[1], "Methodology": tokens[2], "Contribution": tokens[3], "Appropriateness": tokens[4]} },
-					upsert=True )
-	    	print ("Updated publication recommendation  to rejected")
+
+    	if flag ==1:
+	   	status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
+	    	for doc in status:
+	    		latest_status = doc['Status']
+
+	    	print (latest_status)
+	    	# check if the status of given manuscript is "Under review"
+	    	if latest_status=="Under review":
+		    	db.REVIEW.update( 
+						{"ManuscriptID": tokens[0], "REVIEWER_idREVIEWER" : self.id},
+						{ "$set":{"PublicationRecommendation": "Reject", "Clarity": tokens[1], "Methodology": tokens[2], "Contribution": tokens[3], "Appropriateness": tokens[4]} },
+						upsert=True )
+		    	print ("Updated publication recommendation  to rejected")
+		else:
+		 	print ("Cannot review this manuscript, not assigned for reviewing!")
 	else:
-	 	print ("Cannot review this manuscript, not assigned for reviewing!")
+		print("Sorry! Operation cannot be performed. Reviewer does not have authorization to review!")
 
 
     def do_REVIEWACCEPT(self,line):
     	tokens = shlex.split(line)
 
-    	status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
-    	for doc in status:
-    		latest_status = doc['Status']
+    	#check if the reviewer can review this manuscript 
+    	ids = db.REVIEW.find({"REVIEWER_idREVIEWER":self.id},{"ManuscriptID":1, "_id":0})
+    	flag = 0
+    	for doc in ids:
+    		latest_id = doc['ManuscriptID']
+    		if latest_id==tokens[0]:
+    			flag=1
 
-    	print (latest_status)
-    	if latest_status=="Under review":
-	    	db.REVIEW.update( 
-					{"ManuscriptID": tokens[0], "REVIEWER_idREVIEWER" : self.id},
-					{ "$set":{"PublicationRecommendation": "Accept", "Clarity": tokens[1], "Methodology": tokens[2], "Contribution": tokens[3], "Appropriateness": tokens[4]} },
-					upsert=True )
-	    	print ("Updated publication recommendation to Accepted")
+
+    	if flag==1:
+	    	status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
+	    	for doc in status:
+	    		latest_status = doc['Status']
+
+	    	print (latest_status)
+	    	if latest_status=="Under review":
+		    	db.REVIEW.update( 
+						{"ManuscriptID": tokens[0], "REVIEWER_idREVIEWER" : self.id},
+						{ "$set":{"PublicationRecommendation": "Accept", "Clarity": tokens[1], "Methodology": tokens[2], "Contribution": tokens[3], "Appropriateness": tokens[4]} },
+						upsert=True )
+		    	print ("Updated publication recommendation to Accepted")
+		else:
+		 	print ("Cannot review this manuscript, not assigned for reviewing!")
 	else:
-	 	print ("Cannot review this manuscript, not assigned for reviewing!")
+		print("Sorry! Operation cannot be performed. Reviewer does not have authorization to review!")
+
+
+    def do_accept(self,line):
+    	tokens = shlex.split(line)
+
+    	#check if the manuscript is assigned to this editor
+    	editorID = db.MANUSCRIPT.find({"_id":tokens[0]},{"EDITOR_idEDITOR":1, "_id":0})
+
+    	for doc in editorID:
+    		latest_editorID = doc['EDITOR_idEDITOR']
+
+    	if latest_editorID==self.id:
+    		# check if the status of given manuscript is "Under review"
+    		status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
+    		for doc in status:
+    			latest_status = doc['Status']
+    		if latest_status=="Under review":
+    			db.MANUSCRIPT.update({"_id":tokens[0], "EDITOR_idEDITOR":self.id},{"$set":{"Status":"Accepted"}},upsert = True)
+    			print("Manuscript ",tokens[0]," status set to \"Accepted\" ")
+    		else:
+			print("Manuscript does not have the required current status for this action!")
+
+    	else:
+    		print("This Editor DOES NOT have the authorization to assign this manuscipt! Try again.") 
+
+    def do_reject(self,line):
+    	tokens = shlex.split(line)
+
+    	#check if the manuscript is assigned to this editor
+    	editorID = db.MANUSCRIPT.find({"_id":tokens[0]},{"EDITOR_idEDITOR":1, "_id":0})
+
+    	for doc in editorID:
+    		latest_editorID = doc['EDITOR_idEDITOR']
+
+    	if latest_editorID==self.id:
+    		# check if the status of given manuscript is "Under review"
+    		status = db.MANUSCRIPT.find({"_id": tokens[0]},{"Status":1, "_id":0})
+    		for doc in status:
+    			latest_status = doc['Status']
+    		if latest_status=="Under review":
+    			db.MANUSCRIPT.update({"_id":tokens[0], "EDITOR_idEDITOR":self.id},{"$set":{"Status":"Rejected"}},upsert = True)
+    			print("Manuscript ",tokens[0]," status set to \"Rejected\" ")
+    		else:
+			print("Manuscript does not have the required current status for this action!")
+
+    	else:
+    		print("This Editor DOES NOT have the authorization to assign this manuscipt! Try again.") 
+
 
 
 
