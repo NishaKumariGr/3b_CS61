@@ -590,3 +590,5 @@ if __name__ == "__main__":
 	db = con['Team01DB']
 	com_intr = command_Line_Interact()
 	com_intr.cmdloop()
+	con.close()
+	print("Connection Closed!")
